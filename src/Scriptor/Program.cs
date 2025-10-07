@@ -58,7 +58,6 @@ class Program
         verboseOption
     };
 
-        // 👇 This is the key line:
         rootCommand.TreatUnmatchedTokensAsErrors = false;
 
         rootCommand.SetHandler(async (InvocationContext ctx) =>
@@ -71,7 +70,6 @@ class Program
             string framework = parseResult.GetValueForOption(frameworkOption) ?? "net8.0";
             bool verbose = parseResult.GetValueForOption(verboseOption);
 
-            // 👇 Capture all unrecognized args for the script
             string[] scriptArgs = parseResult.UnmatchedTokens.ToArray();
 
             var config = new ScriptRunnerConfig
