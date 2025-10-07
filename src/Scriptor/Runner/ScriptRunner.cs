@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Scriptor.Compiler;
 using Scriptor.NugetManagement;
+using Scriptor.ReferenceManagement;
 
 namespace Scriptor.Runner;
 
@@ -91,6 +92,7 @@ public class ScriptRunner
 
         services.AddHttpClient();
         services.AddSingleton<INuGetPackageManager, NuGetPackageManager>();
+        services.AddSingleton<IReferenceManager, ReferenceManager>();
         services.AddSingleton<DynamicCompiler>();
 
         return services.BuildServiceProvider();
