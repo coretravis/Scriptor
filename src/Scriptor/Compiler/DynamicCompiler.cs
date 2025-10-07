@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Logging;
 using Scriptor.NugetManagement;
+using Scriptor.ReferenceManagement;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
@@ -15,13 +16,16 @@ public class DynamicCompiler
     private readonly INuGetPackageManager _packageManager;
     private readonly AssemblyLoadContext _loadContext;
     private readonly string _packagesDirectory;
+    private readonly IReferenceManager _referenceManager;
 
     public DynamicCompiler(
         ILogger<DynamicCompiler> logger,
-        INuGetPackageManager packageManager)
+        INuGetPackageManager packageManager,
+        IReferenceManager referenceManager)
     {
         _logger = logger;
         _packageManager = packageManager;
+        _referenceManager = referenceManager;
         _loadContext = new AssemblyLoadContext("ScriptorDynamicCommands", isCollectible: true);
 
         // Create packages directory in the executing folder
@@ -44,6 +48,9 @@ public class DynamicCompiler
     {
         assemblyName ??= $"DynamicCommand_{Guid.NewGuid():N}";
 
+        var referenceDirectives = _referenceManager.ParseReferenceDirectives(sourceCode);
+        var customReferences = await _referenceManager.ResolveReferencesAsync(referenceDirectives);
+
         // Parse package references from the source code
         var packageReferences = _packageManager.ParsePackageReferences(sourceCode);
 
@@ -60,7 +67,8 @@ public class DynamicCompiler
         string transformedCode = TransformTopLevelStatements(sourceCode);
 
         var syntaxTree = CSharpSyntaxTree.ParseText(transformedCode);
-        return await CompileSyntaxTreesAsync(new[] { syntaxTree }, assemblyName, packageAssemblyPaths);
+        return await CompileSyntaxTreesAsync(new[] { syntaxTree }, assemblyName, packageAssemblyPaths.Concat(customReferences).ToList());
+
     }
 
     private string TransformTopLevelStatements(string sourceCode)
